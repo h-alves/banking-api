@@ -19,4 +19,18 @@ class AccountService
         $this->accountRepository->reset();
         return true;
     }
+
+    public function getBalance(?int $accountId = null)
+    {
+        if (!$accountId) {
+            throw new AccountNotFoundException($accountId);
+        }
+        $account = $this->accountRepository->findById($accountId);
+        
+        if (!$account) {
+            throw new AccountNotFoundException($accountId);
+        }
+        
+        return $account->balance;
+    }
 }
