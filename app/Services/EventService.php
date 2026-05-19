@@ -18,46 +18,51 @@ class EventService
     private function serializeAccount(Account $account)
     {
         return [
-            'id' => $account->id,
+            'id' => "$account->id",
             'balance' => $account->balance,
         ];
     }
 
-    private function depositOperation(Account $account, int $amount)
+    private function depositOperation(int $accountId, int $amount)
     {
-        $this->accountRepository->update($account, [
-            'balance' => $account->balance + $amount
+        $account = $this->accountRepository->findById($accountId);
+
+        $account = $this->accountRepository->updateOrCreate([
+            'id' => $accountId,
+            'balance' => $account ? $account->balance + $amount : $amount,
         ]);
+
+        return $account;
     }
 
     public function deposit(int $accountId, int $amount)
     {
-        $account = $this->accountRepository->findById($accountId);
-
-        $this->depositOperation($account, $amount);
+        $account = $this->depositOperation($accountId, $amount);
 
         return [
             'destination' => $this->serializeAccount($account),
         ];
     }
 
-    private function withdrawOperation(Account $account, int $amount)
+    private function withdrawOperation(int $accountId, int $amount)
     {
+        $account = $this->accountRepository->findById($accountId);
+
         if (!$account || $account->balance < $amount) {
-            throw new AccountNotFoundException($account->id);
+            throw new AccountNotFoundException($accountId);
         }
 
         $this->accountRepository->update($account, [
             'balance' => $account->balance - $amount
         ]);
+
+        return $account;
     }
 
     public function withdraw(int $accountId, int $amount)
     {
-        $account = $this->accountRepository->findById($accountId);
+        $account = $this->withdrawOperation($accountId, $amount);
 
-        $this->withdrawOperation($account, $amount);
-        
         return [
             'origin' => $this->serializeAccount($account),
         ];
@@ -65,13 +70,8 @@ class EventService
 
     public function transfer(int $originAccountId, int $destinationAccountId, int $amount)
     {
-        $originAccount = $this->accountRepository->findById($originAccountId);
-        $destinationAccount = $this->accountRepository->firstOrCreate([
-            'id' => $destinationAccountId,
-        ]);
-
-        $this->withdrawOperation($originAccount, $amount);
-        $this->depositOperation($destinationAccount, $amount);
+        $originAccount = $this->withdrawOperation($originAccountId, $amount);
+        $destinationAccount = $this->depositOperation($destinationAccountId, $amount);
 
         return [
             'origin' => $this->serializeAccount($originAccount),
