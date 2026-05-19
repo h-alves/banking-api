@@ -27,6 +27,11 @@ class AccountRepository
         return $account;
     }
 
+    public function updateOrCreate(array $data)
+    {
+        return Account::updateOrCreate(['id' => $data['id']], $data);
+    }
+
     public function delete(int $accountId)
     {
         return Account::destroy($accountId);

@@ -33,4 +33,9 @@ class AccountService
         
         return $account->balance;
     }
+    
+    public function createAccount(array $data)
+    {
+        return $this->accountRepository->create($data);
+    }
 }
