@@ -22,7 +22,7 @@ class AccountService
 
     public function getBalance(?int $accountId = null)
     {
-        if (!$accountId) {
+        if ($accountId === null) {
             throw new AccountNotFoundException($accountId);
         }
         $account = $this->accountRepository->findById($accountId);
