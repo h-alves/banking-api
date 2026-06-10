@@ -69,8 +69,11 @@ class TransferEventTest extends TestCase
             ->once()
             ->andReturn($destinationAccount);
 
-        $mockRepository->shouldReceive('updateOrCreate')
-            ->with(Mockery::any())
+        $mockRepository->shouldReceive('update')
+            ->with(
+                Mockery::any(),
+                ['balance' => 80]
+            )
             ->once()
             ->andReturnUsing(function ($data) use ($destinationAccount) {
                 $destinationAccount->balance = $data['balance'];
@@ -162,8 +165,16 @@ class TransferEventTest extends TestCase
             ->once()
             ->andReturn(null);
 
-        $mockRepository->shouldReceive('updateOrCreate')
+        $mockRepository->shouldReceive('create')
             ->with(Mockery::any())
+            ->once()
+            ->andReturn($newAccount);
+
+        $mockRepository->shouldReceive('update')
+            ->with(
+                Mockery::any(),
+                ['balance' => 30]
+            )
             ->once()
             ->andReturnUsing(function ($data) use ($newAccount) {
                 $newAccount->balance = $data['balance'];

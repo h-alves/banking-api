@@ -33,19 +33,30 @@ class DepositEventTest extends TestCase
     {
         $account = new Account([
             'id' => '100',
-            'balance' => 50,
+            'balance' => 0,
         ]);
 
         $mockRepository = Mockery::mock(AccountRepository::class);
         $mockRepository->shouldReceive('findById')
             ->with('100')
             ->once()
-            ->andReturn($account);
+            ->andReturn(null);
 
-        $mockRepository->shouldReceive('updateOrCreate')
+        $mockRepository->shouldReceive('create')
             ->with(Mockery::any())
             ->once()
             ->andReturn($account);
+
+        $mockRepository->shouldReceive('update')
+            ->with(
+                Mockery::any(),
+                ['balance' => 50]
+            )
+            ->once()
+            ->andReturnUsing(function ($data) use ($account) {
+                $account->balance = $data['balance'];
+                return $account;
+            });
 
         $this->app->instance(AccountRepository::class, $mockRepository);
 
@@ -82,9 +93,11 @@ class DepositEventTest extends TestCase
             ->once()
             ->andReturn($existingAccount);
 
-
-        $mockRepository->shouldReceive('updateOrCreate')
-            ->with(Mockery::any())
+        $mockRepository->shouldReceive('update')
+            ->with(
+                Mockery::any(),
+                ['balance' => 80]
+            )
             ->once()
             ->andReturnUsing(function ($data) use ($existingAccount) {
                 $existingAccount->balance = $data['balance'];

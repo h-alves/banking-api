@@ -15,24 +15,19 @@ class EventService
         $this->accountRepository = $accountRepository;
     }
 
-    private function serializeAccount(Account $account)
-    {
-        return [
-            'id' => "$account->id",
-            'balance' => $account->balance,
-        ];
-    }
-
     private function depositOperation(int $accountId, int $amount)
     {
-        $account = $this->accountRepository->findById($accountId);
+        $account = $this->accountRepository->findById($accountId) 
+            ?? $this->accountRepository->create([
+                'id' => $accountId,
+                'balance' => 0
+            ]);
 
-        $account = $this->accountRepository->updateOrCreate([
-            'id' => $accountId,
-            'balance' => $account ? $account->balance + $amount : $amount,
+        $account->deposit($amount);
+        
+        return $this->accountRepository->update($account, [
+            'balance' => $account->balance
         ]);
-
-        return $account;
     }
 
     public function deposit(int $accountId, int $amount)
@@ -40,7 +35,7 @@ class EventService
         $account = $this->depositOperation($accountId, $amount);
 
         return [
-            'destination' => $this->serializeAccount($account),
+            'destination' => $account->serialize(),
         ];
     }
 
@@ -48,15 +43,14 @@ class EventService
     {
         $account = $this->accountRepository->findById($accountId);
 
-        if (!$account || $account->balance < $amount) {
+        if (!$account) {
             throw new AccountNotFoundException($accountId);
         }
-
-        $this->accountRepository->update($account, [
-            'balance' => $account->balance - $amount
+        $account->withdraw($amount);
+        
+        return $this->accountRepository->update($account, [
+            'balance' => $account->balance
         ]);
-
-        return $account;
     }
 
     public function withdraw(int $accountId, int $amount)
@@ -64,7 +58,7 @@ class EventService
         $account = $this->withdrawOperation($accountId, $amount);
 
         return [
-            'origin' => $this->serializeAccount($account),
+            'origin' => $account->serialize(),
         ];
     }
 
@@ -74,8 +68,8 @@ class EventService
         $destinationAccount = $this->depositOperation($destinationAccountId, $amount);
 
         return [
-            'origin' => $this->serializeAccount($originAccount),
-            'destination' => $this->serializeAccount($destinationAccount),
+            'origin' => $originAccount->serialize(),
+            'destination' => $destinationAccount->serialize(),
         ];
     }
 }
